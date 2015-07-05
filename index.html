@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>8x8 Matrix Font Creator</title>
+
+
+    <style>
+    input {
+      margin: 4px;
+      font-size: 1.5rem;
+      vertical-align: middle;
+    }
+
+    .led {
+      width: 25px;
+      height: 25px;
+      background-color: white;
+      border: 1px solid black;
+      margin: 2px;
+    }
+
+    .command {
+      margin-top: 0px;
+      margin-bottom: 0px;
+      height: 44px;
+    }
+
+    .active {
+      background-color: black;
+    }
+
+    #container {
+      width: 232px;
+    }
+
+    #output {
+      width: 232px;
+      height: 116px;
+    }
+
+    #stored {
+      list-style-type: none;
+      padding-left: 0px;
+    }
+
+    body {
+      margin-left: 10px;
+    }
+    </style>
+
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.22.2/es6-shim.js"></script>
+  </head>
+  <body>
+    <input type="text" id="character">
+    <button class="command" id="save">Save</button>
+    <div id="container"></div>
+    <textarea id="output"></textarea>
+    <ul id="stored">
+    </ul>
+    <script>
+
+    var memory = new Array(64);
+    var buttons = [];
+    var dims = [8, 8];
+    var button = document.createElement("button");
+    var container = document.getElementById("container");
+    var character = document.getElementById("character");
+    var output = document.getElementById("output");
+    var stored = document.getElementById("stored");
+    var save = document.getElementById("save");
+
+    button.classList.add("led");
+
+    for (var i = 0; i < dims[0]; i++) {
+      for (var j = 0; j < dims[0]; j++) {
+        buttons.push(container.appendChild(button.cloneNode()));
+      }
+    }
+
+    function asBinaryArray() {
+      var result = [];
+      var all = buttons.map(function(button) {
+        return +button.classList.contains("active");
+      });
+
+      for (var i = 0; i < 8; i++) {
+        result.push(all.slice(i * 8, i * 8 + 8).join(""));
+      }
+
+      return result;
+    }
+
+    function padLeft(nr, n, str){
+      return Array(n - String(nr).length + 1).join(str || "0") + nr;
+    }
+
+    function bin2hex(bin) {
+      return parseInt(bin, 2).toString(16);
+    }
+
+
+    function store() {
+      var saveAs = character.value.trim();
+      if (saveAs.length) {
+        localStorage.setItem(saveAs, JSON.stringify(asBinaryArray()));
+        console.log("Saved as: ", saveAs);
+        console.log( asBinaryArray().map(function(v) { return parseInt(v, 2); }) );
+      }
+
+      output.value = asBinaryArray().map(function(v) {
+        return "0x" + padLeft(bin2hex(v), 2);
+      }).join(", ");
+
+      list();
+    }
+
+    function list() {
+      var items = Object.keys(localStorage).map(function(key) {
+        var item = JSON.parse(localStorage.getItem(key));
+
+        if (Array.isArray(item)) {
+          return key;
+        }
+      }).filter(Boolean);
+
+      stored.innerHTML = "";
+
+      for (var i = 0; i < items.length; i++) {
+        stored.appendChild(document.createElement("li"));
+        stored.lastChild.innerHTML = "<button data-key='" + items[i] + "'>X</button> ";
+        stored.lastChild.innerHTML += "<a href='#" + items[i] + "'>" + items[i] + "</a>";
+      }
+    }
+
+    function load(key) {
+      var rows = JSON.parse(localStorage.getItem(key));
+
+      if (rows === null) {
+        rows = [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ];
+      }
+
+      Array.from(rows.reduce(function(accum, row) {
+        return accum.concat(row);
+      }, ""), Number).forEach(function(led, index) {
+        buttons[index].classList.remove("active");
+
+        if (led) {
+          buttons[index].classList.add("active");
+        }
+      });
+
+      character.value = key;
+    }
+
+    window.onload = window.onhashchange = function() {
+      load((location.hash || "#").slice(1));
+    };
+
+    container.addEventListener("click", function(event) {
+      if (event.target.nodeName === "DIV") {
+        return;
+      }
+      event.target.classList.toggle("active");
+      store();
+    }, false);
+
+    var dragging = false;
+    container.addEventListener("mouseover", function(event) {
+      if (event.target.nodeName === "DIV") {
+        return;
+      }
+      if(dragging) {
+        event.target.classList.add("active");
+      }
+    });
+
+    container.addEventListener("mousedown", function(event) {
+      if (event.target.nodeName === "DIV") {
+        return;
+      }
+      dragging = true;
+      event.target.classList.add("active");
+    });
+
+    container.addEventListener("mouseup", function(event) {
+      if(dragging) {
+        dragging = false;
+        store();
+      }
+    });
+
+    save.onclick = function() {
+      store();
+    };
+
+    character.oninput = function() {
+      var typed = character.value.trim();
+      var stored;
+      if (typed.length && (stored = localStorage[typed])) {
+        console.log(
+          JSON.parse(stored).map(function(v) { return parseInt(v, 2); })
+        );
+      }
+    };
+
+    stored.onclick = function(event) {
+      if (event.target.nodeName === "BUTTON" && event.target.innerText === "X") {
+        var key = event.target.dataset.key;
+        localStorage.removeItem(key);
+        list();
+
+        if (character.value === key) {
+          character.value = "";
+          location.hash = "";
+        }
+      }
+    };
+
+    // List saved items
+    list();
+    </script>
+  </body>
+</html>
