@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>8x8 Matrix Font Creator</title>
+    <title>8x8 Matrix Character Creator</title>
 
 
     <style>
@@ -55,12 +55,16 @@
     <script src="http://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.22.2/es6-shim.js"></script>
   </head>
   <body>
-    <input type="text" id="character">
-    <button class="command" id="save">Save</button>
+    <h1>8x8 Matrix Character Creator</h1>
+    <p>Hold the shift key down to select multiple boxes.</p>
     <div id="container"></div>
     <textarea id="output"></textarea>
+    <p>Name & Save your hex values for later!</p>
+    <input type="text" id="character">
+    <button class="command" id="save">Save</button>
     <ul id="stored">
     </ul>
+    <footer><a href="https://github.com/jorydotcom/matrix-emoji/">GitHub Repo</a></footer>
     <script>
 
     var memory = new Array(64);
@@ -179,7 +183,7 @@
 
     var dragging = false;
     container.addEventListener("mouseover", function(event) {
-      if (event.target.nodeName === "DIV") {
+      if (event.target.nodeName === "DIV" || event.shiftKey == false) {
         return;
       }
       if(dragging) {
@@ -188,7 +192,7 @@
     });
 
     container.addEventListener("mousedown", function(event) {
-      if (event.target.nodeName === "DIV") {
+      if (event.target.nodeName === "DIV" || event.shiftKey == false) {
         return;
       }
       dragging = true;
